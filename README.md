@@ -28,4 +28,4 @@ A Telegram bot that understands Arabic commands, tracks inventory in real time, 
 
 ## Built By
 Ebtihaj Alhrbi — AI Automation Specialist
-[LinkedIn](https://linkedin.com/in/ebtihaj-alhrbi)
+[LinkedIn](https://www.linkedin.com/in/ebtihej/)
