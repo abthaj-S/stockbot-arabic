@@ -548,7 +548,11 @@ def main():
             "   أضف APP_PASSWORD=كلمة_قوية ، مثال:\n"
             "   HOST=0.0.0.0 APP_PASSWORD='xxxx' python app.py"
         )
-    print(f"\n  🎀 تحميلي يعمل الآن على: http://{HOST}:{PORT}\n")
+    url = f"http://{'127.0.0.1' if HOST in ('0.0.0.0', '::') else HOST}:{PORT}"
+    print(f"\n  🎀 تحميلي يعمل الآن على: {url}\n  (لا تسكّر هذي النافذة — للإيقاف اضغط Ctrl+C)\n")
+    if os.environ.get("OPEN_BROWSER") == "1":
+        import webbrowser
+        threading.Timer(1.5, webbrowser.open, args=(url,)).start()
     try:
         from waitress import serve  # خادم مناسب للاستخدام الفعلي بدل خادم التطوير
     except ImportError:
