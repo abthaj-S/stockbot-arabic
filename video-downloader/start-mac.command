@@ -13,7 +13,7 @@ if [ ! -x ".venv/bin/python" ]; then
   echo "⏳ أول تشغيل: نجهّز التطبيق، انتظر شوي..."
   python3 -m venv .venv || { read -r -p "❌ فشل التجهيز. اضغط Enter"; exit 1; }
 fi
-.venv/bin/python -m pip install -q --disable-pip-version-check -r requirements.txt \
+.venv/bin/python -m pip install -q -U --disable-pip-version-check -r requirements.txt \
   || { read -r -p "❌ فشل تثبيت المكتبات، تأكد من الإنترنت. اضغط Enter"; exit 1; }
 
 OPEN_BROWSER=1 .venv/bin/python app.py

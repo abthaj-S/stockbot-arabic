@@ -20,7 +20,7 @@ if not exist ".venv\Scripts\python.exe" (
   echo  First run: installing, please wait...  أول تشغيل: نجهّز التطبيق، انتظر شوي...
   %PY% -m venv .venv || goto :fail
 )
-".venv\Scripts\python.exe" -m pip install -q --disable-pip-version-check -r requirements.txt || goto :fail
+".venv\Scripts\python.exe" -m pip install -q -U --disable-pip-version-check -r requirements.txt || goto :fail
 
 set OPEN_BROWSER=1
 ".venv\Scripts\python.exe" app.py

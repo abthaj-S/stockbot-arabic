@@ -223,6 +223,10 @@ h1 {
   background: #ffe3e9; color: #c2294b; border-radius: 16px; padding: 10px 14px;
   margin: 14px 0 0; font-weight: 600;
 }
+.error-detail {
+  display: block; margin-top: 6px; font-weight: 400; font-size: .78rem; opacity: .75;
+  font-family: ui-monospace, monospace; text-align: left; word-break: break-word;
+}
 :root[data-theme="dark"] .error { background: #4a1f2b; color: #ffb3c3; }
 
 .theme-toggle {

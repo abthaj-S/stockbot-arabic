@@ -1,4 +1,5 @@
 flask>=3.1
-yt-dlp>=2025.8.1
+yt-dlp[default]>=2026.8.19
+deno>=2.0
 imageio-ffmpeg>=0.5
 waitress>=3.0.1

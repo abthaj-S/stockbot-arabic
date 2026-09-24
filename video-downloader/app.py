@@ -51,6 +51,7 @@ MAX_DURATION = int(os.environ.get("MAX_DURATION_MIN", "180")) * 60
 MAX_ACTIVE_JOBS = int(os.environ.get("MAX_ACTIVE_JOBS", "3"))
 MIN_FREE_DISK = 1024 * 1024 * 1024  # نرفض التحميل إذا بقي أقل من 1GB
 MAX_URL_LENGTH = 2048
+FAKE_IP_RANGE = ipaddress.ip_network("198.18.0.0/15")
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 
 # حدود الطلبات لكل عنوان IP: (عدد الطلبات، خلال كم ثانية)
@@ -71,20 +72,27 @@ def find_ffmpeg() -> str:
         return system
     import imageio_ffmpeg
 
-    bundled = imageio_ffmpeg.get_ffmpeg_exe()
-    # yt-dlp يبحث عن ملف اسمه ffmpeg داخل المجلد، فننشئ رابطاً بهذا الاسم
-    bin_dir = BASE_DIR / ".bin"
-    bin_dir.mkdir(exist_ok=True)
-    link = bin_dir / "ffmpeg"
-    if not link.exists():
-        try:
-            link.symlink_to(bundled)
-        except OSError:
-            shutil.copy2(bundled, link)
-    return str(link)
+    # المسار الكامل للملف يعمل على ويندوز وماك ولينكس (اسمه يبدأ بـ ffmpeg فيتعرف عليه yt-dlp)
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def find_js_runtimes() -> dict:
+    """يوتيوب يحتاج محرك JavaScript (Deno) لفك حماية روابط الفيديو."""
+    runtimes = {}
+    try:
+        import deno
+
+        runtimes["deno"] = {"path": deno.find_deno_bin()}
+    except Exception:  # noqa: BLE001
+        if shutil.which("deno"):
+            runtimes["deno"] = {}
+    if shutil.which("node"):
+        runtimes["node"] = {}
+    return runtimes or {"deno": {}}
 
 
 FFMPEG = find_ffmpeg()
+JS_RUNTIMES = find_js_runtimes()
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024  # الطلبات عبارة عن JSON صغير فقط
@@ -121,6 +129,9 @@ def check_public_url(url: str) -> None:
         ip = ipaddress.ip_address(info[4][0].split("%")[0])
         if getattr(ip, "ipv4_mapped", None):
             ip = ip.ipv4_mapped
+        # 198.18.0.0/15 تستخدمه بعض برامج VPN كعناوين وهمية للمواقع الخارجية، فنسمح به
+        if ip in FAKE_IP_RANGE:
+            continue
         if not ip.is_global or ip.is_multicast:
             raise ForbiddenURL("هذا الرابط يشير لعنوان داخلي وغير مسموح 🚫")
 
@@ -218,11 +229,22 @@ def clean_error(err: Exception) -> str:
         return f"الملف أكبر من الحد المسموح ({MAX_FILESIZE // 1024 // 1024} MB) 📦"
     if "does not pass filter" in msg or "المقطع أطول" in msg:
         return f"المقطع أطول من الحد المسموح ({MAX_DURATION // 60} دقيقة) ⏱️"
+    if "not a bot" in msg:
+        return "يوتيوب يطلب تحقق إضافي من جهازك 🤖 جرّب بعد شوي أو غيّر الشبكة"
+    if "JavaScript runtime" in msg or "n challenge" in msg or "Requested format is not available" in msg:
+        return "يوتيوب تحدّث 🔄 سكّر التطبيق وشغّله من جديد عشان يتحدث تلقائياً"
     if "Private video" in msg or "login" in msg.lower() or "sign in" in msg.lower():
         return "المقطع خاص أو يحتاج تسجيل دخول 🔒"
     if "Unable to download" in msg or "connect" in msg.lower() or "HTTP Error" in msg:
         return "تعذّر الوصول للرابط، تأكد من الإنترنت ومن صحة الرابط 🌐"
     return "حدث خطأ غير متوقع، جرّب مرة ثانية أو رابطاً آخر"
+
+
+def error_detail(err: Exception) -> str:
+    """سطر مختصر من الخطأ الأصلي يساعد في معرفة السبب (بدون مسارات الملفات)."""
+    msg = re.sub(r"\x1b\[[0-9;]*m", "", str(err)).replace("ERROR: ", "")
+    msg = msg.replace(str(BASE_DIR), "…").splitlines()[0] if msg else ""
+    return msg[:220]
 
 
 def safe_filename(name: str) -> str:
@@ -258,6 +280,7 @@ def base_opts() -> dict:
         "noprogress": True,
         "noplaylist": True,
         "ffmpeg_location": FFMPEG,
+        "js_runtimes": JS_RUNTIMES,
         "socket_timeout": 30,
         "retries": 3,
         # بدون الروابط المباشرة يتصل yt-dlp فقط بالمواقع المعروفة (يوتيوب، تيك توك…)
@@ -292,7 +315,7 @@ def api_info():
         return jsonify(error=str(e)), 400
     except Exception as e:  # noqa: BLE001
         log.warning("info failed for %s: %s", client_ip(), e)
-        return jsonify(error=clean_error(e)), 400
+        return jsonify(error=clean_error(e), detail=error_detail(e)), 400
 
     if info.get("_type") == "playlist":
         info = next((e for e in info.get("entries") or [] if e), None)
@@ -522,7 +545,7 @@ def run_job(job_id, url, mode, quality, audio_format, bitrate):
     except Exception as e:  # noqa: BLE001
         log.warning("job %s failed: %s", job_id, e)
         shutil.rmtree(out_dir, ignore_errors=True)
-        update(job_id, status="error", stage="حدث خطأ", error=clean_error(e))
+        update(job_id, status="error", stage="حدث خطأ", error=clean_error(e), detail=error_detail(e))
 
 
 def strip_audio(src: Path) -> Path:

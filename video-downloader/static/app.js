@@ -32,7 +32,17 @@ function toast(msg) {
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove("show"), 2400);
 }
-function showError(el, msg) { el.textContent = msg; el.hidden = !msg; }
+function showError(el, msg, detail) {
+  el.textContent = msg;
+  if (detail) {
+    const d = document.createElement("small");
+    d.className = "error-detail";
+    d.dir = "ltr";
+    d.textContent = detail;
+    el.appendChild(d);
+  }
+  el.hidden = !msg;
+}
 function fmtDuration(s) {
   if (!s) return "";
   s = Math.round(s);
@@ -90,11 +100,11 @@ $("urlForm").onsubmit = async (e) => {
       body: JSON.stringify({ url }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "صار خطأ");
+    if (!res.ok) throw Object.assign(new Error(data.error || "صار خطأ"), { detail: data.detail });
     state.url = url;
     renderInfo(data);
   } catch (err) {
-    showError($("fetchError"), err.message);
+    showError($("fetchError"), err.message, err.detail);
   } finally {
     setLoading($("fetchBtn"), false);
   }
@@ -253,7 +263,7 @@ function poll(jobId) {
       $("progressBox").hidden = true;
       $("downloadBtn").hidden = false;
       $("downloadBtn").disabled = false;
-      showError($("dlError"), job.error || "صار خطأ أثناء التحميل");
+      showError($("dlError"), job.error || "صار خطأ أثناء التحميل", job.detail);
     }
   }, 700);
 }
