@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تحميلي 🎀</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="blobs" aria-hidden="true">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+  </div>
+
+  <button class="theme-toggle" id="themeToggle" title="تبديل الوضع الليلي" aria-label="تبديل الوضع الليلي">🌙</button>
+
+  <main class="wrap">
+    <header class="hero">
+      <div class="mascot" aria-hidden="true">
+        <svg viewBox="0 0 120 120" width="96" height="96">
+          <defs>
+            <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffb3d1"/><stop offset="1" stop-color="#c3a6ff"/>
+            </linearGradient>
+          </defs>
+          <rect x="14" y="26" width="92" height="74" rx="26" fill="url(#mg)"/>
+          <path d="M40 26 L30 10 M80 26 L90 10" stroke="#c3a6ff" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="30" cy="10" r="6" fill="#ffb3d1"/><circle cx="90" cy="10" r="6" fill="#ffb3d1"/>
+          <g class="eyes">
+            <ellipse cx="46" cy="58" rx="6" ry="8" fill="#3a2c4f"/>
+            <ellipse cx="74" cy="58" rx="6" ry="8" fill="#3a2c4f"/>
+            <circle cx="48" cy="55" r="2.2" fill="#fff"/><circle cx="76" cy="55" r="2.2" fill="#fff"/>
+          </g>
+          <ellipse cx="34" cy="72" rx="7" ry="4" fill="#ff8fb8" opacity=".7"/>
+          <ellipse cx="86" cy="72" rx="7" ry="4" fill="#ff8fb8" opacity=".7"/>
+          <path d="M53 72 Q60 80 67 72" stroke="#3a2c4f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>تحميلي</h1>
+      <p class="tagline">حمّل أي مقطع بجودة عالية — فيديو، صوت، أو فيديو بدون صوت ✨</p>
+    </header>
+
+    <!-- إدخال الرابط -->
+    <section class="card">
+      <form id="urlForm" class="url-row" autocomplete="off">
+        <div class="input-wrap">
+          <span class="input-icon">🔗</span>
+          <input id="urlInput" type="url" inputmode="url" dir="ltr"
+                 placeholder="https://… الصق الرابط هنا" required>
+          <button type="button" id="pasteBtn" class="chip ghost" title="لصق">📋 لصق</button>
+        </div>
+        <button id="fetchBtn" class="btn primary" type="submit">
+          <span class="btn-label">يلا نشوف 👀</span>
+          <span class="spinner" hidden></span>
+        </button>
+      </form>
+      <p class="sources">يدعم يوتيوب · تيك توك · إنستغرام · X · فيسبوك · ساوند كلاود · وأكثر من ١٠٠٠ موقع</p>
+      <p id="fetchError" class="error" hidden></p>
+    </section>
+
+    <!-- معلومات المقطع وخيارات التحميل -->
+    <section id="optionsCard" class="card" hidden>
+      <div class="preview">
+        <div class="thumb">
+          <img id="thumb" alt="">
+          <span id="duration" class="badge"></span>
+        </div>
+        <div class="meta">
+          <h2 id="title"></h2>
+          <p id="uploader" class="muted"></p>
+          <span id="source" class="pill"></span>
+        </div>
+      </div>
+
+      <h3 class="label">وش تبي تحمّل؟</h3>
+      <div class="modes" role="radiogroup">
+        <button type="button" class="mode active" data-mode="video" role="radio" aria-checked="true">
+          <span class="mode-emoji">🎬</span>
+          <span class="mode-title">فيديو كامل</span>
+          <span class="mode-sub">بالصوت · MP4</span>
+        </button>
+        <button type="button" class="mode" data-mode="mute" role="radio" aria-checked="false">
+          <span class="mode-emoji">🔇</span>
+          <span class="mode-title">فيديو بدون صوت</span>
+          <span class="mode-sub">نفصل الصوت · MP4</span>
+        </button>
+        <button type="button" class="mode" data-mode="audio" role="radio" aria-checked="false">
+          <span class="mode-emoji">🎵</span>
+          <span class="mode-title">صوت فقط</span>
+          <span class="mode-sub">MP3 · M4A · WAV</span>
+        </button>
+      </div>
+
+      <div id="videoOpts">
+        <h3 class="label">الجودة</h3>
+        <div id="qualities" class="chips"></div>
+      </div>
+
+      <div id="audioOpts" hidden>
+        <h3 class="label">صيغة الصوت</h3>
+        <div class="chips" id="audioFormats">
+          <button type="button" class="chip active" data-val="mp3">MP3</button>
+          <button type="button" class="chip" data-val="m4a">M4A</button>
+          <button type="button" class="chip" data-val="wav">WAV <small>بدون ضغط</small></button>
+        </div>
+        <div id="bitrateWrap">
+          <h3 class="label">جودة الصوت</h3>
+          <div class="chips" id="bitrates">
+            <button type="button" class="chip active" data-val="320"><bdi dir="ltr">320 kbps</bdi> <small>الأعلى</small></button>
+            <button type="button" class="chip" data-val="256"><bdi dir="ltr">256 kbps</bdi></button>
+            <button type="button" class="chip" data-val="192"><bdi dir="ltr">192 kbps</bdi></button>
+            <button type="button" class="chip" data-val="128"><bdi dir="ltr">128 kbps</bdi> <small>أصغر حجم</small></button>
+          </div>
+        </div>
+      </div>
+
+      <button id="downloadBtn" class="btn primary big" type="button">
+        <span class="btn-label">حمّل الحين ⬇️</span>
+      </button>
+
+      <!-- التقدم -->
+      <div id="progressBox" class="progress-box" hidden>
+        <div class="progress-head">
+          <span id="stage">جاري التحميل…</span>
+          <span id="percent">0%</span>
+        </div>
+        <div class="bar"><div id="barFill" class="bar-fill"></div></div>
+        <div class="progress-foot muted">
+          <span id="speed"></span><span id="eta"></span>
+        </div>
+      </div>
+
+      <div id="doneBox" class="done-box" hidden>
+        <div class="done-emoji">🎉</div>
+        <p>ملفك جاهز! لو ما بدأ التحميل تلقائياً اضغط الزر</p>
+        <a id="saveLink" class="btn success" href="#">احفظ الملف 💾</a>
+        <button id="againBtn" class="btn ghost" type="button">تحميل مقطع ثاني</button>
+      </div>
+
+      <p id="dlError" class="error" hidden></p>
+    </section>
+
+    <footer class="foot muted">صُنع بـ 💜 · استخدمه للمحتوى اللي تملك حق تحميله</footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
